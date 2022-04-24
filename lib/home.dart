@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
 class MyHomePage extends StatefulWidget {
@@ -10,7 +11,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   bool isPermitted = false;
-  Position? position;
+  String? locality;
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +48,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _buildMostrarTextoPermissao() {
-    if (position != null) {
+    if (locality != null) {
       return Container();
     }
 
@@ -86,15 +87,27 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _pedirCoordenadas() async {
-    position = await Geolocator.getCurrentPosition();
+    Position position = await Geolocator.getCurrentPosition();
+
+    List<Placemark> placemarks = await placemarkFromCoordinates(
+      position.latitude,
+      position.longitude,
+    );
+
+    if(placemarks.isNotEmpty) {
+      locality = placemarks[0].locality;
+    } else {
+      locality = '';
+    }
+
     setState(() {});
   }
 
   Widget _buildMostrarTextoCoordenadas() {
-    if (position == null) {
+    if (locality == null) {
       return Container();
     }
 
-    return Text(position.toString());
+    return Text(locality!);
   }
 }
