@@ -12,18 +12,23 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   bool isPermitted = false;
   String? locality;
+  String? coordinates;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildMostrarTextoPermissao(),
-            _buildMostrarTextoCoordenadas(),
-            _buildBotao(),
-          ],
+      backgroundColor: Colors.blue,
+      body: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildMostrarTextoPermissao(),
+              _buildMostrarTextoCoordenadas(),
+              _buildBotao(),
+            ],
+          ),
         ),
       ),
     );
@@ -94,10 +99,14 @@ class _MyHomePageState extends State<MyHomePage> {
       position.longitude,
     );
 
-    if(placemarks.isNotEmpty) {
-      locality = placemarks[0].locality;
+    if (placemarks.isNotEmpty) {
+      final mark = placemarks[0];
+      print(mark);
+      locality = mark.subAdministrativeArea ?? '';
+      coordinates = 'Lat: ${position.latitude}, Lon: ${position.longitude}';
     } else {
       locality = '';
+      coordinates = '';
     }
 
     setState(() {});
@@ -108,6 +117,27 @@ class _MyHomePageState extends State<MyHomePage> {
       return Container();
     }
 
-    return Text(locality!);
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Text(
+            locality!,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            coordinates!,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
