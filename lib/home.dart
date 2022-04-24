@@ -10,6 +10,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   bool isPermitted = false;
+  Position? position;
 
   @override
   Widget build(BuildContext context) {
@@ -19,20 +20,37 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildMostrarTextoPermissao(),
-            if (!isPermitted)
-              ElevatedButton(
-                onPressed: () {
-                  _pedirPermissao();
-                },
-                child: Text('pedi permissão'),
-              ),
+            _buildMostrarTextoCoordenadas(),
+            _buildBotao(),
           ],
         ),
       ),
     );
   }
 
+  Widget _buildBotao() {
+    if (!isPermitted) {
+      return ElevatedButton(
+        onPressed: () {
+          _pedirPermissao();
+        },
+        child: Text('Pedir permissão'),
+      );
+    }
+
+    return ElevatedButton(
+      onPressed: () {
+        _pedirCoordenadas();
+      },
+      child: Text('Pedir Coordenadas'),
+    );
+  }
+
   Widget _buildMostrarTextoPermissao() {
+    if (position != null) {
+      return Container();
+    }
+
     if (isPermitted) {
       return Text('Tem permissão');
     }
@@ -65,5 +83,18 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       isPermitted = true;
     });
+  }
+
+  void _pedirCoordenadas() async {
+    position = await Geolocator.getCurrentPosition();
+    setState(() {});
+  }
+
+  Widget _buildMostrarTextoCoordenadas() {
+    if (position == null) {
+      return Container();
+    }
+
+    return Text(position.toString());
   }
 }
