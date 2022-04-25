@@ -23,43 +23,70 @@ class _MyHomePageState extends State<MyHomePage> {
   int? currentTemp;
   List<int>? daysTemp;
 
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initApp();
+  }
+
+  void _initApp() async {
+    loading = true;
+    await _pedirPermissao();
+
+    if (!isPermitted) {
+      setState(() {
+        loading = false;
+      });
+      return;
+    }
+
+    await _pedirCoordenadas();
+
+    setState(() {
+      loading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.blue,
-      body: SafeArea(
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildMostrarTextoPermissao(),
-              _buildMostrarTextoCoordenadas(),
-              _buildMostrarTemperature(),
-              _buildMostrarProxTemperature(),
-              _buildBotao(),
-            ],
-          ),
+      body: _buildApp(),
+    );
+  }
+
+  Widget _buildApp() {
+    if (loading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildMostrarTextoPermissao(),
+            _buildMostrarTextoCoordenadas(),
+            _buildMostrarTemperature(),
+            _buildMostrarProxTemperature(),
+            _buildBotao(),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildBotao() {
-    if (!isPermitted) {
-      return ElevatedButton(
-        onPressed: () {
-          _pedirPermissao();
-        },
-        child: Text('Pedir permissão'),
-      );
-    }
-
     return ElevatedButton(
       onPressed: () {
-        _pedirCoordenadas();
+        _initApp();
       },
-      child: Text('Pedir Coordenadas'),
+      child: Text('Reiniciar'),
     );
   }
 
@@ -102,7 +129,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void _pedirCoordenadas() async {
+  _pedirCoordenadas() async {
     Position position = await Geolocator.getCurrentPosition();
 
     List<Placemark> placemarks = await placemarkFromCoordinates(
@@ -121,7 +148,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     setState(() {});
 
-    _pegarPrevisaoTempoAgora(position);
+    await _pegarPrevisaoTempoAgora(position);
   }
 
   Widget _buildMostrarTextoCoordenadas() {
