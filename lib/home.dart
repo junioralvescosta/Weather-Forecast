@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 
 const endPointUrl = 'https://api.openweathermap.org/data/2.5/';
 const APIKey = 'cc9d21dcba5cdac36ac39562b33758b8';
+const DIFF_BETWEEN_TEMP = 273.15;
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
@@ -20,6 +21,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String? locality;
   String? coordinates;
   int? currentTemp;
+  List<int>? daysTemp;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +36,7 @@ class _MyHomePageState extends State<MyHomePage> {
               _buildMostrarTextoPermissao(),
               _buildMostrarTextoCoordenadas(),
               _buildMostrarTemperature(),
+              _buildMostrarProxTemperature(),
               _buildBotao(),
             ],
           ),
@@ -167,10 +170,21 @@ class _MyHomePageState extends State<MyHomePage> {
 
     final data = jsonDecode(response.body);
     if (data?['current']?['temp'] != null) {
-      double temp = data['current']['temp'] - 273.15;
+      double temp = data['current']['temp'] - DIFF_BETWEEN_TEMP;
       setState(() {
         currentTemp = temp.round();
       });
+    }
+
+    bool hasDaily = data['daily'] != null;
+    if (hasDaily) {
+      List days = data['daily'];
+      daysTemp = [];
+      for (int i = 0; i < 3; i++) {
+        double day = days[i]['temp']['day'] - DIFF_BETWEEN_TEMP;
+        daysTemp!.add(day.round());
+      }
+      setState(() {});
     }
   }
 
@@ -187,6 +201,31 @@ class _MyHomePageState extends State<MyHomePage> {
           color: Colors.white,
           fontSize: 36,
         ),
+      ),
+    );
+  }
+
+  Widget _buildMostrarProxTemperature() {
+    if (daysTemp == null) {
+      return Container();
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(
+        daysTemp!.length,
+        (index) {
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              '${daysTemp![index]}º',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+              ),
+            ),
+          );
+        },
       ),
     );
   }
