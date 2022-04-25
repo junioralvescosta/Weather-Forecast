@@ -1,6 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
+
+const endPointUrl = 'https://api.openweathermap.org/data/2.5/';
+const APIKey = 'cc9d21dcba5cdac36ac39562b33758b8';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
@@ -13,6 +19,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool isPermitted = false;
   String? locality;
   String? coordinates;
+  int? currentTemp;
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +33,7 @@ class _MyHomePageState extends State<MyHomePage> {
             children: [
               _buildMostrarTextoPermissao(),
               _buildMostrarTextoCoordenadas(),
+              _buildMostrarTemperature(),
               _buildBotao(),
             ],
           ),
@@ -101,7 +109,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
     if (placemarks.isNotEmpty) {
       final mark = placemarks[0];
-      print(mark);
       locality = mark.subAdministrativeArea ?? '';
       coordinates = 'Lat: ${position.latitude}, Lon: ${position.longitude}';
     } else {
@@ -110,6 +117,8 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     setState(() {});
+
+    _pegarPrevisaoTempoAgora(position);
   }
 
   Widget _buildMostrarTextoCoordenadas() {
@@ -137,6 +146,47 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  _pegarPrevisaoTempoAgora(Position position) async {
+    final httpClient = http.Client();
+    final requestUrl = '$endPointUrl/onecall?'
+        'lat=${position.latitude}&'
+        'lon=${position.longitude}&'
+        'exclude=hourly,minutely&'
+        'appid=$APIKey';
+
+    final response = await httpClient.get(Uri.parse(requestUrl));
+
+    if (response.statusCode != 200) {
+      throw Exception(
+          'error retrieving location for city: ${response.statusCode}');
+    }
+
+    final data = jsonDecode(response.body);
+    if (data?['current']?['temp'] != null) {
+      double temp = data['current']['temp'] - 273.15;
+      setState(() {
+        currentTemp = temp.round();
+      });
+    }
+  }
+
+  Widget _buildMostrarTemperature() {
+    if (currentTemp == null) {
+      return Container();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Text(
+        '$currentTempº',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 36,
+        ),
       ),
     );
   }
