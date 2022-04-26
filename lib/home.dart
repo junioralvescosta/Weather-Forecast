@@ -32,7 +32,10 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _initApp() async {
-    loading = true;
+    setState(() {
+      loading = true;
+    });
+
     await _pedirPermissao();
 
     if (!isPermitted) {
@@ -42,7 +45,9 @@ class _MyHomePageState extends State<MyHomePage> {
       return;
     }
 
-    await _pedirCoordenadas();
+    Position position = await _pedirCoordenadas();
+
+    await _pegarPrevisaoTempoAgora(position);
 
     setState(() {
       loading = false;
@@ -54,6 +59,12 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       backgroundColor: Colors.blue,
       body: _buildApp(),
+      floatingActionButton: loading ? null : FloatingActionButton(
+        child: const Icon(Icons.refresh),
+        onPressed: () {
+          _initApp();
+        },
+      ),
     );
   }
 
@@ -74,19 +85,9 @@ class _MyHomePageState extends State<MyHomePage> {
             _buildMostrarTextoCoordenadas(),
             _buildMostrarTemperature(),
             _buildMostrarProxTemperature(),
-            _buildBotao(),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildBotao() {
-    return ElevatedButton(
-      onPressed: () {
-        _initApp();
-      },
-      child: Text('Reiniciar'),
     );
   }
 
@@ -103,6 +104,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   _pedirPermissao() async {
+    isPermitted = false;
+
     bool serviceEnabled;
     LocationPermission permission;
 
@@ -124,12 +127,12 @@ class _MyHomePageState extends State<MyHomePage> {
           'Location permissions are permanently denied, we cannot request permissions.');
     }
 
-    setState(() {
-      isPermitted = true;
-    });
+    isPermitted = true;
   }
 
-  _pedirCoordenadas() async {
+  Future<Position> _pedirCoordenadas() async {
+    coordinates = locality = null;
+
     Position position = await Geolocator.getCurrentPosition();
 
     List<Placemark> placemarks = await placemarkFromCoordinates(
@@ -141,14 +144,9 @@ class _MyHomePageState extends State<MyHomePage> {
       final mark = placemarks[0];
       locality = mark.subAdministrativeArea ?? '';
       coordinates = 'Lat: ${position.latitude}, Lon: ${position.longitude}';
-    } else {
-      locality = '';
-      coordinates = '';
     }
 
-    setState(() {});
-
-    await _pegarPrevisaoTempoAgora(position);
+    return position;
   }
 
   Widget _buildMostrarTextoCoordenadas() {
@@ -198,9 +196,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final data = jsonDecode(response.body);
     if (data?['current']?['temp'] != null) {
       double temp = data['current']['temp'] - DIFF_BETWEEN_TEMP;
-      setState(() {
-        currentTemp = temp.round();
-      });
+      currentTemp = temp.round();
     }
 
     bool hasDaily = data['daily'] != null;
@@ -211,7 +207,6 @@ class _MyHomePageState extends State<MyHomePage> {
         double day = days[i]['temp']['day'] - DIFF_BETWEEN_TEMP;
         daysTemp!.add(day.round());
       }
-      setState(() {});
     }
   }
 
